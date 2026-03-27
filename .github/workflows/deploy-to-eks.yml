@@ -31,8 +31,8 @@ jobs:
 
       - name: Build backend Docker image
         run: |
-          docker build -t weather-backend:ci backend/
+          docker build -t weather-backend ./sample-dotnet-eks/backend/
 
       - name: Build frontend Docker image
         run: |
-          docker build -t weather-frontend:ci frontend/
+          docker build -t weather-frontend ./sample-dotnet-eks/frontend
