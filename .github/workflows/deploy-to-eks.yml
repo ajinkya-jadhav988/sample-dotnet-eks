@@ -11,28 +11,91 @@ jobs:
 
     env:
       AWS_REGION: ap-south-1
+      ACCOUNT_ID: 819305735560
       CLUSTER_NAME: sample-eks-cluster
+      BACKEND_IMAGE_NAME: weather-backend
+      FRONTEND_IMAGE_NAME: weather-frontend
 
     steps:
+      # -----------------------------
+      # 1. Checkout source code
+      # -----------------------------
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # -----------------------------
+      # 2. Verify AWS authentication
+      # -----------------------------
       - name: Verify AWS identity
         run: aws sts get-caller-identity
 
+      # -----------------------------
+      # 3. Configure kubectl for EKS
+      # -----------------------------
       - name: Configure kubeconfig
         run: |
           aws eks update-kubeconfig \
             --region $AWS_REGION \
             --name $CLUSTER_NAME
 
+      # -----------------------------
+      # 4. Verify EKS nodes exist
+      # -----------------------------
       - name: Verify EKS nodes
         run: kubectl get nodes
 
+      # -----------------------------
+      # 5. Login Docker to ECR
+      # -----------------------------
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region $AWS_REGION | \
+          docker login --username AWS \
+          --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+      # -----------------------------
+      # 6. Build backend Docker image
+      # -----------------------------
       - name: Build backend Docker image
         run: |
-          docker build -t weather-backend:ci backend/
+          docker build -t $BACKEND_IMAGE_NAME backend/
 
+      # -----------------------------
+      # 7. Build frontend Docker image
+      # -----------------------------
       - name: Build frontend Docker image
         run: |
-          docker build -t weather-frontend:ci frontend/
+          docker build -t $FRONTEND_IMAGE_NAME frontend/
+
+      # -----------------------------
+      # 8. Tag and push backend image
+      # -----------------------------
+      - name: Push backend image to ECR
+        run: |
+          docker tag $BACKEND_IMAGE_NAME:latest \
+            $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_IMAGE_NAME:latest
+          docker push \
+            $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_IMAGE_NAME:latest
+
+      # -----------------------------
+      # 9. Tag and push frontend image
+      # -----------------------------
+      - name: Push frontend image to ECR
+        run: |
+          docker tag $FRONTEND_IMAGE_NAME:latest \
+            $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_IMAGE_NAME:latest
+          docker push \
+            $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_IMAGE_NAME:latest
+
+      # -----------------------------
+      # 10. Deploy to EKS
+      # -----------------------------
+      - name: Deploy application to EKS
+        run: |
+          BACKEND_IMAGE_URI="$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$BACKEND_IMAGE_NAME:latest"
+          FRONTEND_IMAGE_URI="$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$FRONTEND_IMAGE_NAME:latest"
+
+          sed -i "s|BACKEND_IMAGE|$BACKEND_IMAGE_URI|g" k8s/backend-deployment.yaml
+          sed -i "s|FRONTEND_IMAGE|$FRONTEND_IMAGE_URI|g" k8s/frontend-deployment.yaml
+
+          kubectl apply -f k8s/
