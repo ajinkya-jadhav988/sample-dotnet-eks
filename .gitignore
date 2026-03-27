@@ -1,0 +1,15 @@
+# .NET
+**/bin/
+**/obj/
+
+# OS files
+.DS_Store
+
+# Docker
+*.log
+
+# VS Code
+.vscode/
+
+# Environment files
+.env
