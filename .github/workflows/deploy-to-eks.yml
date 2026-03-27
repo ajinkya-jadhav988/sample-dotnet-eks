@@ -27,5 +27,12 @@ jobs:
             --name $CLUSTER_NAME
 
       - name: Verify EKS has active nodes
+        run: kubectl get nodes
+
+      - name: Build backend Docker image
         run: |
-          kubectl get nodes
+          docker build -t weather-backend:ci ./backend
+
+      - name: Build frontend Docker image
+        run: |
+          docker build -t weather-frontend:ci ./frontend
