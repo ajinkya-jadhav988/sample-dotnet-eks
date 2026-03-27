@@ -1,1 +1,1 @@
-# sample-dotnet-eks
+just repo
