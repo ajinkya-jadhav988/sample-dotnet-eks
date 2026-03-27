@@ -17,14 +17,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Verify AWS identity
-        run: aws sts get-caller-identity
-
-      - name: Configure kubeconfig
-        run: |
-          aws eks update-kubeconfig \
-            --region $AWS_REGION \
-            --name $CLUSTER_NAME
-
-      - name: Verify cluster access
-        run: kubectl get nodes
+      - name: Verify EKS has active nodes
+      run: |
+        kubectl get nodes
