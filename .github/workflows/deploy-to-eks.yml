@@ -26,13 +26,13 @@ jobs:
             --region $AWS_REGION \
             --name $CLUSTER_NAME
 
-      - name: Verify EKS has active nodes
+      - name: Verify EKS nodes
         run: kubectl get nodes
 
       - name: Build backend Docker image
         run: |
-          docker build -t weather-backend:ci ./backend
+          docker build -t weather-backend:ci backend/
 
       - name: Build frontend Docker image
         run: |
-          docker build -t weather-frontend:ci ./frontend
+          docker build -t weather-frontend:ci frontend/
