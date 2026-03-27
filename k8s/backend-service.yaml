@@ -3,9 +3,9 @@ kind: Service
 metadata:
   name: weather-backend
 spec:
+  type: LoadBalancer
   selector:
     app: weather-backend
   ports:
     - port: 5000
       targetPort: 5000
-
